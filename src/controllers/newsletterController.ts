@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { NewsletterSubscription, INewsletterSubscription } from '../models/NewsletterSubscription';
 import { createSuccessResponse, createErrorResponse } from '../constants/apiResponses';
 import { IAuthRequest } from '../types';
+import { createNewsletterNotification } from './notificationController';
 
 // Subscribe to Newsletter
 export const subscribeNewsletter = async (req: IAuthRequest, res: Response): Promise<void> => {
@@ -38,6 +39,14 @@ export const subscribeNewsletter = async (req: IAuthRequest, res: Response): Pro
     });
 
     await subscription.save();
+
+    // Create notification for new newsletter subscription
+    try {
+      await createNewsletterNotification(subscription.email, req.user?._id);
+    } catch (notificationError) {
+      console.error('Failed to create newsletter notification:', notificationError);
+      // Continue with the response even if notification fails
+    }
 
     res.status(201).json(createSuccessResponse('Successfully subscribed to newsletter', {
       email: subscription.email,

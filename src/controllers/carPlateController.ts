@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { CarPlate, ICarPlate } from '../models/CarPlate';
 import { createSuccessResponse, createErrorResponse } from '../constants/apiResponses';
 import { IAuthRequest } from '../types';
+import { createCarPlateNotification } from './notificationController';
 
 // Get all car plates
 export const getAllCarPlates = async (req: IAuthRequest, res: Response): Promise<void> => {
@@ -98,34 +99,49 @@ export const getCarPlateById = async (req: IAuthRequest, res: Response): Promise
 // Create car plate
 export const createCarPlate = async (req: IAuthRequest, res: Response): Promise<void> => {
   try {
-    const {
-      plateNumber,
-      state,
-      district,
-      rtoCode,
-      vehicleType,
-      registrationDate,
-      ownerName
-    } = req.body;
+    const { plateNumber } = req.body;
+
+    // Validate plate number format
+    const plateNumberUpper = plateNumber.toUpperCase().trim();
+    
+    // Indian Vehicle Number Plate Formats
+    const validPatterns = [
+      /^[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}$/, // GJ01NX1234
+      /^[A-Z]{2}[0-9]{2}[A-Z]{1}[0-9]{4}$/, // GJ01N1234
+      /^[A-Z]{2}[0-9]{2}[A-Z]{1}[0-9]{3}$/, // GJ01N123 (older format)
+      /^[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{3}$/, // GJ01AB123
+      /^[A-Z]{2}[0-9]{2}[A-Z]{3}[0-9]{4}$/, // GJ01ABC1234 (rare)
+    ];
+
+    const isValidFormat = validPatterns.some(pattern => pattern.test(plateNumberUpper));
+    
+    if (!isValidFormat) {
+      res.status(400).json(createErrorResponse(
+        'Invalid vehicle number plate format. Please use a valid Indian format like: GJ01NX1234, GJ01N1234, MH12AB1234'
+      ));
+      return;
+    }
 
     // Check if plate number already exists
-    const existingPlate = await CarPlate.findOne({ plateNumber: plateNumber.toUpperCase() });
+    const existingPlate = await CarPlate.findOne({ plateNumber: plateNumberUpper });
     if (existingPlate) {
       res.status(400).json(createErrorResponse('Plate number already exists'));
       return;
     }
 
     const carPlate = new CarPlate({
-      plateNumber: plateNumber.toUpperCase(),
-      state,
-      district,
-      rtoCode: rtoCode.toUpperCase(),
-      vehicleType,
-      registrationDate,
-      ownerName
+      plateNumber: plateNumberUpper
     });
 
     await carPlate.save();
+
+    // Create notification for new car plate detection with full details
+    try {
+      await createCarPlateNotification(carPlate.plateNumber, req.user?._id, carPlate);
+    } catch (notificationError) {
+      console.error('Failed to create car plate notification:', notificationError);
+      // Continue with the response even if notification fails
+    }
 
     res.status(201).json(createSuccessResponse('Car plate created successfully', carPlate));
   } catch (error: any) {
@@ -209,25 +225,56 @@ export const validateCarPlate = async (req: IAuthRequest, res: Response): Promis
       return;
     }
 
-    // Validate Indian plate number format
-    const plateRegex = /^[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}$/;
-    const isValidFormat = plateRegex.test(plateNumber.toUpperCase());
+    const plateNumberUpper = plateNumber.toUpperCase().trim();
+
+    // Indian Vehicle Number Plate Formats
+    const validPatterns = [
+      /^[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}$/, // GJ01NX1234
+      /^[A-Z]{2}[0-9]{2}[A-Z]{1}[0-9]{4}$/, // GJ01N1234
+      /^[A-Z]{2}[0-9]{2}[A-Z]{1}[0-9]{3}$/, // GJ01N123 (older format)
+      /^[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{3}$/, // GJ01AB123
+      /^[A-Z]{2}[0-9]{2}[A-Z]{3}[0-9]{4}$/, // GJ01ABC1234 (rare)
+    ];
+
+    const isValidFormat = validPatterns.some(pattern => pattern.test(plateNumberUpper));
+    
+    // Detect format type
+    let formatType = 'unknown';
+    if (/^[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}$/.test(plateNumberUpper)) {
+      formatType = 'standard_private'; // GJ01NX1234
+    } else if (/^[A-Z]{2}[0-9]{2}[A-Z]{1}[0-9]{4}$/.test(plateNumberUpper)) {
+      formatType = 'two_wheeler'; // GJ01E1234
+    } else if (/^[A-Z]{2}[0-9]{2}[A-Z]{1}[0-9]{3}$/.test(plateNumberUpper)) {
+      formatType = 'old_format'; // GJ01N123
+    } else if (/^[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{3}$/.test(plateNumberUpper)) {
+      formatType = 'short_commercial'; // GJ01AB123
+    } else if (/^[A-Z]{2}[0-9]{2}[A-Z]{3}[0-9]{4}$/.test(plateNumberUpper)) {
+      formatType = 'extended'; // GJ01ABC1234
+    }
 
     // Extract RTO code
-    const match = plateNumber.toUpperCase().match(/^([A-Z]{2})([0-9]{2})/);
+    const match = plateNumberUpper.match(/^([A-Z]{2})([0-9]{2})/);
     const rtoCode = match ? match[1] + match[2] : null;
 
     // Check if already exists
     const existingPlate = await CarPlate.findOne({ 
-      plateNumber: plateNumber.toUpperCase() 
+      plateNumber: plateNumberUpper 
     });
 
     res.status(200).json(createSuccessResponse('Plate validation completed', {
-      plateNumber: plateNumber.toUpperCase(),
+      plateNumber: plateNumberUpper,
       isValidFormat,
+      formatType,
       rtoCode,
       alreadyExists: !!existingPlate,
-      existingPlate: existingPlate || null
+      existingPlate: existingPlate || null,
+      supportedFormats: [
+        'GJ01NX1234 (Standard Private)',
+        'GJ01N1234 (Two Wheeler)',
+        'GJ01N123 (Old Format)',
+        'GJ01AB123 (Short Commercial)',
+        'GJ01ABC1234 (Extended)'
+      ]
     }));
   } catch (error: any) {
     res.status(500).json(createErrorResponse('Failed to validate plate number', error.message));

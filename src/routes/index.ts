@@ -9,6 +9,7 @@ import newsletterRoutes from './newsletterRoutes';
 import teamRoutes from './teamRoutes';
 import carPlateRoutes from './carPlateRoutes';
 import insuranceFinanceRoutes from './insuranceFinanceRoutes';
+import notificationRoutes from './notificationRoutes';
 import { createSuccessResponse } from '../constants/apiResponses';
 import { getSystemInfo, getContactInfo } from '../constants/systemInfo';
 
@@ -36,5 +37,6 @@ router.use('/newsletter', newsletterRoutes);
 router.use('/team', teamRoutes);
 router.use('/car-plates', carPlateRoutes);
 router.use('/insurance-finance', insuranceFinanceRoutes);
+router.use('/notifications', notificationRoutes);
 
 export default router;
