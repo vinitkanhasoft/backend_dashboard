@@ -3,7 +3,7 @@ import { EmailCampaign, IEmailCampaign } from '../models/EmailCampaign';
 import { NewsletterSubscription } from '../models/NewsletterSubscription';
 import { createSuccessResponse, createErrorResponse } from '../constants/apiResponses';
 import { IAuthRequest } from '../types';
-import { emailService } from '../services/emailService';
+import { emailService, diagnoseEmailService } from '../services/emailService';
 import { EmailCampaignStatus } from '../enums/newsletterEnums';
 
 // Create Email Campaign
@@ -171,13 +171,45 @@ export const getEmailCampaignById = async (req: IAuthRequest, res: Response): Pr
   }
 };
 
-// Send Quick Email (to selected subscribers)
+// Send Quick Email (to selected subscribers) - supports personalized emails
 export const sendQuickEmail = async (req: IAuthRequest, res: Response): Promise<void> => {
   try {
-    const { subject, content, selectedEmails } = req.body;
+    const { subject, content, selectedEmails, personalizedEmails } = req.body;
 
+    // Handle personalized emails payload
+    if (personalizedEmails && Array.isArray(personalizedEmails) && personalizedEmails.length > 0) {
+      // Extract emails and content from personalized emails
+      const emails = personalizedEmails.map(item => item.email).filter(email => email);
+      const emailContents = personalizedEmails.map(item => item.content).filter(content => content);
+      
+      if (emails.length === 0) {
+        res.status(400).json(createErrorResponse('No valid email addresses found in personalizedEmails'));
+        return;
+      }
+
+      // Send each personalized email individually
+      sendPersonalizedEmailsInBackground(subject, emails, emailContents);
+      
+      res.status(200).json(createSuccessResponse('Personalized quick emails sending started', {
+        totalRecipients: emails.length,
+        message: 'Personalized emails are being sent in the background'
+      }));
+      return;
+    }
+
+    // Handle traditional quick email format
     if (!selectedEmails || !Array.isArray(selectedEmails) || selectedEmails.length === 0) {
       res.status(400).json(createErrorResponse('Selected emails array is required'));
+      return;
+    }
+
+    if (!content || content.trim().length === 0) {
+      res.status(400).json(createErrorResponse('Email content is required'));
+      return;
+    }
+
+    if (content.trim().length < 10) {
+      res.status(400).json(createErrorResponse('Email content must be at least 10 characters'));
       return;
     }
 
@@ -204,13 +236,75 @@ export const sendQuickEmail = async (req: IAuthRequest, res: Response): Promise<
   }
 };
 
+// Background function for personalized emails
+async function sendPersonalizedEmailsInBackground(subject: string, emails: string[], emailContents: string[]) {
+  try {
+    console.log(`Sending ${emails.length} personalized emails`);
+    
+    for (let i = 0; i < emails.length; i++) {
+      const email = emails[i];
+      const content = emailContents[i] || '';
+      
+      try {
+        // Log the content for debugging
+        console.log(`Sending personalized email to ${email} with content length: ${content.length}`);
+        console.log(`Content preview: ${content.substring(0, 200)}...`);
+
+        const result = await emailService.sendMarketingEmail(email, subject, content);
+        
+        if (result.success) {
+          console.log(`Personalized email sent successfully to ${email}`);
+        } else {
+          console.log(`Failed to send personalized email to ${email}: ${result.error}`);
+        }
+
+        // Rate limiting delay
+        if (i < emails.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      } catch (error: any) {
+        console.error(`Error sending personalized email to ${email}:`, error.message);
+      }
+    }
+
+    console.log(`Personalized email sending completed for ${emails.length} recipients`);
+  } catch (error) {
+    console.error('Personalized email sending failed:', error);
+  }
+}
+
 // Background function for quick email
 async function sendQuickEmailInBackground(subject: string, content: string, recipients: string[]) {
   try {
+    // Convert plain text content to proper HTML if needed
+    let htmlContent = content;
+    
+    // If content doesn't contain HTML tags, convert it to basic HTML
+    if (!content.includes('<') && !content.includes('>')) {
+      htmlContent = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <h2 style="color: #007bff; margin-bottom: 20px;">${subject}</h2>
+          <div style="background-color: #f9f9f9; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            ${content.split('\n').map(paragraph => `<p style="margin-bottom: 15px;">${paragraph}</p>`).join('')}
+          </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <p style="color: #666; font-size: 14px;">
+              Best regards,<br>
+              Sell Cars Team
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    // Log the content for debugging
+    console.log('Sending email with content length:', htmlContent.length);
+    console.log('Content preview:', htmlContent.substring(0, 200) + '...');
+
     const result = await emailService.sendBulkMarketingEmails(
       recipients,
       subject,
-      content,
+      htmlContent,
       (sent, total, email, success) => {
         console.log(`Quick email progress: ${sent}/${total} - ${email} - ${success ? 'Success' : 'Failed'}`);
       }
@@ -311,5 +405,24 @@ export const deleteEmailCampaign = async (req: IAuthRequest, res: Response): Pro
     }));
   } catch (error: any) {
     res.status(500).json(createErrorResponse('Failed to delete email campaign', error.message));
+  }
+};
+
+// Diagnose Email Service
+export const diagnoseEmailServiceEndpoint = async (req: IAuthRequest, res: Response): Promise<void> => {
+  try {
+    const diagnosis = await diagnoseEmailService();
+    
+    if (diagnosis.success) {
+      res.status(200).json(createSuccessResponse('Email service is configured correctly', diagnosis));
+    } else {
+      res.status(400).json(createErrorResponse(
+        'Email service has configuration issues', 
+        diagnosis.issues.join(', '), 
+        400
+      ));
+    }
+  } catch (error: any) {
+    res.status(500).json(createErrorResponse('Failed to diagnose email service', error.message));
   }
 };

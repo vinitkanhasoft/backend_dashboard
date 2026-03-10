@@ -22,7 +22,8 @@ import {
   sendQuickEmail,
   sendTestEmail,
   getEmailMarketingStats,
-  deleteEmailCampaign
+  deleteEmailCampaign,
+  diagnoseEmailServiceEndpoint
 } from '../controllers/emailMarketingController';
 
 const router = Router();
@@ -132,17 +133,35 @@ const validateQuickEmail = [
     .isLength({ max: 200 })
     .withMessage('Email subject cannot exceed 200 characters'),
   body('content')
+    .optional()
     .trim()
     .notEmpty()
     .withMessage('Email content is required')
     .isLength({ min: 10 })
     .withMessage('Email content must be at least 10 characters'),
   body('selectedEmails')
+    .optional()
     .isArray({ min: 1 })
     .withMessage('Selected emails array is required and must not be empty'),
   body('selectedEmails.*')
+    .optional()
     .isEmail()
-    .withMessage('Invalid email address in selected emails')
+    .withMessage('Invalid email address in selected emails'),
+  body('personalizedEmails')
+    .optional()
+    .isArray({ min: 1 })
+    .withMessage('Personalized emails array is required and must not be empty'),
+  body('personalizedEmails.*.email')
+    .optional()
+    .isEmail()
+    .withMessage('Invalid email address in personalized emails'),
+  body('personalizedEmails.*.content')
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage('Email content is required in personalized emails')
+    .isLength({ min: 10 })
+    .withMessage('Email content must be at least 10 characters in personalized emails')
 ];
 
 // Test email validation
@@ -177,5 +196,6 @@ router.delete('/campaigns/:id', validateNewsletterId, handleValidationErrors, de
 router.post('/quick-email', validateQuickEmail, handleValidationErrors, sendQuickEmail);
 router.post('/test-email', validateTestEmail, handleValidationErrors, sendTestEmail);
 router.get('/marketing-stats', getEmailMarketingStats);
+router.get('/diagnose-email-service', diagnoseEmailServiceEndpoint);
 
 export default router;

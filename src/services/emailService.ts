@@ -6,20 +6,41 @@ export class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
+    // Log email configuration for debugging
+    logger.info('Initializing Email Service with configuration:', {
+      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+      port: process.env.EMAIL_PORT || '587',
+      secure: process.env.EMAIL_PORT === '465',
+      hasUser: !!process.env.EMAIL_USER,
+      hasPass: !!process.env.EMAIL_PASS,
+      hasFrom: !!process.env.EMAIL_FROM,
+      user: process.env.EMAIL_USER,
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER
+    });
+
     this.transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.EMAIL_PORT || '587'),
       secure: process.env.EMAIL_PORT === '465', // true for 465, false for other ports
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.EMAIL_USER || 'vinit1222003@gmail.com',
+        pass: process.env.EMAIL_PASS || 'oieilhwntjvhgbue',
       },
+      debug: true, // Enable debug logging
+      logger: true, // Enable logger
+      tls: {
+        rejectUnauthorized: false // Allow self-signed certificates
+      }
     });
 
     // Verify connection configuration
     this.transporter.verify((error, success) => {
       if (error) {
-        logger.error('Email service configuration error:', error);
+        logger.error('Email service configuration error:', {
+          error: error.message,
+          code: (error as any).code,
+          stack: error.stack
+        });
       } else {
         logger.info('Email service is ready to send messages');
       }
@@ -29,12 +50,20 @@ export class EmailService {
   private async sendEmail(options: IEmailOptions): Promise<void> {
     try {
       const mailOptions = {
-        from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+        from: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'vinit1222003@gmail.com',
         to: options.to,
         subject: options.subject,
         text: options.text,
         html: options.html,
       };
+
+      logger.info('Attempting to send email:', {
+        to: options.to,
+        subject: options.subject,
+        from: mailOptions.from,
+        hasHtml: !!options.html,
+        hasText: !!options.text
+      });
 
       const info = await this.transporter.sendMail(mailOptions);
 
@@ -42,9 +71,18 @@ export class EmailService {
         messageId: info.messageId,
         to: options.to,
         subject: options.subject,
+        response: info.response
       });
     } catch (error) {
-      logger.error('Failed to send email:', error);
+      const errorDetails = {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        code: (error as any).code,
+        command: (error as any).command,
+        response: (error as any).response,
+        stack: error instanceof Error ? error.stack : undefined
+      };
+      
+      logger.error('Failed to send email:', errorDetails);
       throw new Error(
         `Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -334,3 +372,44 @@ export class EmailService {
 }
 
 export const emailService = new EmailService();
+
+// Diagnostic method for troubleshooting
+export const diagnoseEmailService = async (): Promise<{ success: boolean; issues: string[]; config: any }> => {
+  const issues: string[] = [];
+  const config = {
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: process.env.EMAIL_PORT || '587',
+    secure: process.env.EMAIL_PORT === '465',
+    hasUser: !!process.env.EMAIL_USER,
+    hasPass: !!process.env.EMAIL_PASS,
+    hasFrom: !!process.env.EMAIL_FROM,
+    from: process.env.EMAIL_FROM || process.env.EMAIL_USER
+  };
+
+  // Check required environment variables
+  if (!process.env.EMAIL_USER) {
+    issues.push('EMAIL_USER environment variable is missing');
+  }
+  
+  if (!process.env.EMAIL_PASS) {
+    issues.push('EMAIL_PASS environment variable is missing');
+  }
+
+  // Check email format
+  if (process.env.EMAIL_USER && !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(process.env.EMAIL_USER)) {
+    issues.push('EMAIL_USER is not a valid email format');
+  }
+
+  // Test connection
+  try {
+    await emailService['transporter'].verify();
+  } catch (error: any) {
+    issues.push(`Connection test failed: ${error.message}`);
+  }
+
+  return {
+    success: issues.length === 0,
+    issues,
+    config
+  };
+};

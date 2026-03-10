@@ -119,7 +119,12 @@ export const createInsuranceCompany = async (req: IAuthRequest, res: Response): 
     let logoData;
     if (req.file) {
       try {
-        logoData = await cloudinaryUpload(req.file.buffer, 'insurance-logos');
+        const uploadResult = await cloudinaryUpload(req.file.buffer, 'insurance-logos');
+        logoData = {
+          url: uploadResult.secure_url,
+          publicId: uploadResult.public_id,
+          alt: `${name} logo` // Use company name as alt text
+        };
       } catch (uploadError: any) {
         res.status(400).json(createErrorResponse('Failed to upload logo', uploadError.message));
         return;
@@ -183,8 +188,12 @@ export const updateInsuranceCompany = async (req: IAuthRequest, res: Response): 
         }
         
         // Upload new logo
-        const logoData = await cloudinaryUpload(req.file.buffer, 'insurance-logos');
-        updates.logo = logoData;
+        const uploadResult = await cloudinaryUpload(req.file.buffer, 'insurance-logos');
+        updates.logo = {
+          url: uploadResult.secure_url,
+          publicId: uploadResult.public_id,
+          alt: `${company.name} logo` // Use company name as alt text
+        };
       } catch (uploadError: any) {
         res.status(400).json(createErrorResponse('Failed to upload logo', uploadError.message));
         return;
@@ -386,7 +395,12 @@ export const createFinanceOption = async (req: IAuthRequest, res: Response): Pro
     let logoData;
     if (req.file) {
       try {
-        logoData = await cloudinaryUpload(req.file.buffer, 'finance-logos');
+        const uploadResult = await cloudinaryUpload(req.file.buffer, 'finance-logos');
+        logoData = {
+          url: uploadResult.secure_url,
+          publicId: uploadResult.public_id,
+          alt: `${bankName} logo` // Use bank name as alt text
+        };
       } catch (uploadError: any) {
         res.status(400).json(createErrorResponse('Failed to upload logo', uploadError.message));
         return;
@@ -454,8 +468,12 @@ export const updateFinanceOption = async (req: IAuthRequest, res: Response): Pro
         }
         
         // Upload new logo
-        const logoData = await cloudinaryUpload(req.file.buffer, 'finance-logos');
-        updates.logo = logoData;
+        const uploadResult = await cloudinaryUpload(req.file.buffer, 'finance-logos');
+        updates.logo = {
+          url: uploadResult.secure_url,
+          publicId: uploadResult.public_id,
+          alt: `${option.bankName} logo` // Use bank name as alt text
+        };
       } catch (uploadError: any) {
         res.status(400).json(createErrorResponse('Failed to upload logo', uploadError.message));
         return;

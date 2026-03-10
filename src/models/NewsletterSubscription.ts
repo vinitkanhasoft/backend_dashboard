@@ -35,9 +35,10 @@ const NewsletterSubscriptionSchema = new Schema<INewsletterSubscription>({
 });
 
 // Indexes for better performance
-NewsletterSubscriptionSchema.index({ email: 1 });
+NewsletterSubscriptionSchema.index({ email: 1 }, { unique: true }); // Unique index for email
 NewsletterSubscriptionSchema.index({ isActive: 1 });
 NewsletterSubscriptionSchema.index({ subscribedAt: -1 });
+NewsletterSubscriptionSchema.index({ email: 1, isActive: 1 }); // Compound index for active email searches
 
 // Pre-save middleware to ensure email uniqueness and proper formatting
 NewsletterSubscriptionSchema.pre('save', function(next) {

@@ -85,9 +85,19 @@ export const getAllNewsletterSubscriptions = async (req: IAuthRequest, res: Resp
       .skip(skip)
       .limit(limitNum);
 
-    const total = await NewsletterSubscription.countDocuments(query);
-    const activeCount = await NewsletterSubscription.countDocuments({ isActive: true });
-    const inactiveCount = await NewsletterSubscription.countDocuments({ isActive: false });
+    const total = await NewsletterSubscription.countDocuments();
+    
+    // Get statistics using parallel queries for better performance
+    const [activeCount, inactiveCount, recentSubscriptions, todaySubscriptions] = await Promise.all([
+      NewsletterSubscription.countDocuments({ isActive: true }),
+      NewsletterSubscription.countDocuments({ isActive: false }),
+      NewsletterSubscription.countDocuments({
+        subscribedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+      }),
+      NewsletterSubscription.countDocuments({
+        subscribedAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) }
+      })
+    ]);
 
     const pagination = {
       page: pageNum,
@@ -99,10 +109,18 @@ export const getAllNewsletterSubscriptions = async (req: IAuthRequest, res: Resp
     res.status(200).json(createSuccessResponse('Newsletter subscriptions retrieved successfully', {
       subscriptions,
       pagination,
-      stats: {
-        total,
-        active: activeCount,
-        inactive: inactiveCount
+      statistics: {
+        totalSubscriptions: total,
+        activeSubscriptions: activeCount,
+        inactiveSubscriptions: inactiveCount,
+        recentSubscriptions: recentSubscriptions, // Last 30 days
+        todaySubscriptions: todaySubscriptions, // Today only
+        activeRate: total > 0 ? Math.round((activeCount / total) * 100) : 0,
+        growthRate: todaySubscriptions > 0 ? Math.round((todaySubscriptions / total) * 100) : 0
+      },
+      filters: {
+        status: status || null,
+        search: search || null
       }
     }));
   } catch (error: any) {
@@ -143,22 +161,58 @@ export const unsubscribeNewsletter = async (req: IAuthRequest, res: Response): P
 export const getNewsletterStats = async (req: IAuthRequest, res: Response): Promise<void> => {
   try {
     const total = await NewsletterSubscription.countDocuments();
-    const active = await NewsletterSubscription.countDocuments({ isActive: true });
-    const inactive = await NewsletterSubscription.countDocuments({ isActive: false });
     
-    // Get recent subscriptions (last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const recentSubscriptions = await NewsletterSubscription.countDocuments({
-      subscribedAt: { $gte: thirtyDaysAgo }
-    });
-
-    res.status(200).json(createSuccessResponse('Newsletter statistics retrieved successfully', {
-      total,
+    // Get comprehensive statistics using parallel queries
+    const [
       active,
       inactive,
       recentSubscriptions,
-      activeRate: total > 0 ? Math.round((active / total) * 100) : 0
+      todaySubscriptions,
+      thisWeekSubscriptions,
+      thisMonthSubscriptions
+    ] = await Promise.all([
+      NewsletterSubscription.countDocuments({ isActive: true }),
+      NewsletterSubscription.countDocuments({ isActive: false }),
+      NewsletterSubscription.countDocuments({
+        subscribedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+      }),
+      NewsletterSubscription.countDocuments({
+        subscribedAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) }
+      }),
+      NewsletterSubscription.countDocuments({
+        subscribedAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+      }),
+      NewsletterSubscription.countDocuments({
+        subscribedAt: { $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) }
+      })
+    ]);
+    
+    // Calculate rates
+    const activeRate = total > 0 ? Math.round((active / total) * 100) : 0;
+    const todayGrowthRate = todaySubscriptions > 0 ? Math.round((todaySubscriptions / total) * 100) : 0;
+    const weeklyGrowthRate = thisWeekSubscriptions > 0 ? Math.round((thisWeekSubscriptions / total) * 100) : 0;
+    const monthlyGrowthRate = thisMonthSubscriptions > 0 ? Math.round((thisMonthSubscriptions / total) * 100) : 0;
+
+    res.status(200).json(createSuccessResponse('Newsletter statistics retrieved successfully', {
+      overview: {
+        totalSubscriptions: total,
+        activeSubscriptions: active,
+        inactiveSubscriptions: inactive,
+        activeRate: activeRate
+      },
+      growth: {
+        todaySubscriptions,
+        weeklySubscriptions: thisWeekSubscriptions,
+        monthlySubscriptions: thisMonthSubscriptions,
+        recentSubscriptions, // Last 30 days
+        todayGrowthRate,
+        weeklyGrowthRate,
+        monthlyGrowthRate
+      },
+      metrics: {
+        unsubscribeRate: total > 0 ? Math.round((inactive / total) * 100) : 0,
+        retentionRate: total > 0 ? Math.round((active / total) * 100) : 0
+      }
     }));
   } catch (error: any) {
     res.status(500).json(createErrorResponse('Failed to retrieve newsletter statistics', error.message));
