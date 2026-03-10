@@ -123,6 +123,12 @@ export const getAllBlogs = async (req: IAuthRequest, res: Response): Promise<voi
 
     const total = await Blog.countDocuments(query);
 
+    // Get blog statistics
+    const [draftCount, publishedCount] = await Promise.all([
+      Blog.countDocuments({ status: BlogStatus.DRAFT }),
+      Blog.countDocuments({ status: BlogStatus.PUBLISHED })
+    ]);
+
     const pagination = {
       page: pageNum,
       limit: limitNum,
@@ -132,7 +138,12 @@ export const getAllBlogs = async (req: IAuthRequest, res: Response): Promise<voi
 
     res.status(200).json(createSuccessResponse('Blogs retrieved successfully', {
       blogs,
-      pagination
+      pagination,
+      statistics: {
+        totalBlogs: await Blog.countDocuments(),
+        draftBlogs: draftCount,
+        publishedBlogs: publishedCount
+      }
     }));
   } catch (error: any) {
     res.status(500).json(createErrorResponse('Failed to retrieve blogs', error.message));
@@ -368,6 +379,12 @@ export const searchBlogs = async (req: IAuthRequest, res: Response): Promise<voi
 
     const total = await Blog.countDocuments(query);
 
+    // Get blog statistics
+    const [draftCount, publishedCount] = await Promise.all([
+      Blog.countDocuments({ status: BlogStatus.DRAFT }),
+      Blog.countDocuments({ status: BlogStatus.PUBLISHED })
+    ]);
+
     const pagination = {
       page: pageNum,
       limit: limitNum,
@@ -378,6 +395,11 @@ export const searchBlogs = async (req: IAuthRequest, res: Response): Promise<voi
     res.status(200).json(createSuccessResponse('Blogs search completed', {
       blogs,
       pagination,
+      statistics: {
+        totalBlogs: await Blog.countDocuments(),
+        draftBlogs: draftCount,
+        publishedBlogs: publishedCount
+      },
       query: q
     }));
   } catch (error: any) {
