@@ -1,18 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { CarStatus } from '../enums/carEnums';
 
-// Car Feature Interface
-export interface ICarFeature {
-  name: string;
-  available: boolean;
-}
-
-// Car Specification Interface
-export interface ICarSpecification {
-  name: string;
-  available: boolean;
-}
-
 // Car Image Interface
 export interface ICarImage {
   url: string;
@@ -63,40 +51,14 @@ export interface ICar extends Document {
   primaryImage?: ICarImage;
   images?: ICarImage[];
 
-  // Relations (populated)
-  features?: ICarFeature[];
-  specifications?: ICarSpecification[];
+  // Relations (references to separate documents)
+  features?: mongoose.Types.ObjectId[];
+  specifications?: mongoose.Types.ObjectId[];
 
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
 }
-
-// Car Feature Schema
-const CarFeatureSchema = new Schema<ICarFeature>({
-  name: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  available: {
-    type: Boolean,
-    default: false
-  }
-}, { _id: false });
-
-// Car Specification Schema
-const CarSpecificationSchema = new Schema<ICarSpecification>({
-  name: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  available: {
-    type: Boolean,
-    default: false
-  }
-}, { _id: false });
 
 // Car Image Schema
 const CarImageSchema = new Schema<ICarImage>({
@@ -273,8 +235,14 @@ const CarSchema = new Schema<ICar>({
   images: [CarImageSchema],
 
   // Relations
-  features: [CarFeatureSchema],
-  specifications: [CarSpecificationSchema]
+  features: [{
+    type: Schema.Types.ObjectId,
+    ref: 'CarFeature'
+  }],
+  specifications: [{
+    type: Schema.Types.ObjectId,
+    ref: 'CarSpecification'
+  }]
 }, {
   timestamps: true,
   toJSON: { virtuals: true },

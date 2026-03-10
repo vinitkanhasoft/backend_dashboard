@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose, { Types } from 'mongoose';
 import { CarStatus } from '../enums/carEnums';
 
 // Extend Request interface to include user property
@@ -179,7 +180,7 @@ export const createCar = async (req: AuthenticatedRequest, res: Response): Promi
       }
     }
 
-    // Create car
+    // Create car without features and specifications first
     const car = new Car({
       title,
       brand,
@@ -208,38 +209,45 @@ export const createCar = async (req: AuthenticatedRequest, res: Response): Promi
       status,
       isFeatured,
       primaryImage,
-      images,
-      features: parsedFeatures,
-      specifications: parsedSpecifications
+      images
     });
 
     await car.save();
 
-    // Create single feature document with all features as object
+    // Create separate feature documents and collect their IDs
+    const featureIds: Types.ObjectId[] = [];
     if (parsedFeatures.length > 0) {
       const featuresObject: Record<string, boolean> = {};
       parsedFeatures.forEach(feature => {
         featuresObject[feature.name] = feature.available;
       });
       
-      await CarFeature.create({
+      const featureDoc = await CarFeature.create({
         carId: car._id,
         features: featuresObject
       });
+      featureIds.push(featureDoc._id);
     }
 
-    // Create single specification document with all specifications as object
+    // Create separate specification documents and collect their IDs
+    const specificationIds: Types.ObjectId[] = [];
     if (parsedSpecifications.length > 0) {
       const specificationsObject: Record<string, boolean> = {};
       parsedSpecifications.forEach(spec => {
         specificationsObject[spec.name] = spec.available;
       });
       
-      await CarSpecification.create({
+      const specificationDoc = await CarSpecification.create({
         carId: car._id,
         specifications: specificationsObject
       });
+      specificationIds.push(specificationDoc._id);
     }
+
+    // Update car with feature and specification IDs
+    car.features = featureIds;
+    car.specifications = specificationIds;
+    await car.save();
 
     const populatedCar = await Car.findById(car._id)
       .populate('features')
@@ -673,28 +681,24 @@ export const updateCar = async (req: AuthenticatedRequest, res: Response): Promi
     if (updateData.features) {
       try {
         const featuresObj = typeof updateData.features === 'string' ? JSON.parse(updateData.features) : updateData.features;
-        const parsedFeatures = Object.entries(featuresObj).map(([name, available]) => ({
-          name,
-          available: Boolean(available),
-          category: getFeatureCategory(name)
-        }));
+        
+        // Create feature object with all keys and boolean values
+        const featureObject = { ...DEFAULT_FEATURES };
+        Object.entries(featuresObj).forEach(([key, value]) => {
+          if (FEATURE_KEYS.includes(key)) {
+            featureObject[key] = Boolean(value);
+          }
+        });
 
-        // Update features in Car document
-        updateData.features = parsedFeatures;
+        // Update or create CarFeature document
+        const featureDoc = await CarFeature.findOneAndUpdate(
+          { carId: id },
+          { features: featureObject },
+          { new: true, upsert: true }
+        );
 
-        // Update single CarFeature document
-        if (parsedFeatures.length > 0) {
-          const featuresObject: Record<string, boolean> = {};
-          parsedFeatures.forEach(feature => {
-            featuresObject[feature.name] = feature.available;
-          });
-          
-          await CarFeature.findOneAndUpdate(
-            { carId: id },
-            { features: featuresObject },
-            { new: true, upsert: true }
-          );
-        }
+        // Update car's features array with the feature document ID
+        updateData.features = [featureDoc._id];
       } catch (error: any) {
         res.status(400).json(createErrorResponse('Invalid features format', error?.message));
         return;
@@ -704,28 +708,24 @@ export const updateCar = async (req: AuthenticatedRequest, res: Response): Promi
     if (updateData.specifications) {
       try {
         const specsObj = typeof updateData.specifications === 'string' ? JSON.parse(updateData.specifications) : updateData.specifications;
-        const parsedSpecifications = Object.entries(specsObj).map(([name, available]) => ({
-          name,
-          available: Boolean(available),
-          category: getSpecificationCategory(name)
-        }));
+        
+        // Create specification object with all keys and boolean values
+        const specObject = { ...DEFAULT_SPECIFICATIONS };
+        Object.entries(specsObj).forEach(([key, value]) => {
+          if (SPECIFICATION_KEYS.includes(key)) {
+            specObject[key] = Boolean(value);
+          }
+        });
 
-        // Update specifications in Car document
-        updateData.specifications = parsedSpecifications;
+        // Update or create CarSpecification document
+        const specificationDoc = await CarSpecification.findOneAndUpdate(
+          { carId: id },
+          { specifications: specObject },
+          { new: true, upsert: true }
+        );
 
-        // Update single CarSpecification document
-        if (parsedSpecifications.length > 0) {
-          const specificationsObject: Record<string, boolean> = {};
-          parsedSpecifications.forEach(spec => {
-            specificationsObject[spec.name] = spec.available;
-          });
-          
-          await CarSpecification.findOneAndUpdate(
-            { carId: id },
-            { specifications: specificationsObject },
-            { new: true, upsert: true }
-          );
-        }
+        // Update car's specifications array with the specification document ID
+        updateData.specifications = [specificationDoc._id];
       } catch (error: any) {
         res.status(400).json(createErrorResponse('Invalid specifications format', error?.message));
         return;
