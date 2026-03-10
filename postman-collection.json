@@ -1,0 +1,1441 @@
+{
+	"info": {
+		"_postman_id": "sell-cars-backend-api-v2",
+		"name": "Sell Cars Backend API - Complete",
+		"description": "Complete API collection for Sell Cars Backend Application with authentication, banner management, and comprehensive car management endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"});",
+									"",
+									"pm.test(\"User data is returned\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('user');",
+									"    pm.expect(jsonData.data).to.have.property('token');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"SecurePass123!\",\n    \"phone\": \"+1234567890\",\n    \"role\": \"user\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"});",
+									"",
+									"pm.test(\"Token is returned\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('token');",
+									"    if (jsonData.data.token) {",
+									"        pm.collectionVariables.set('authToken', jsonData.data.token);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"SecurePass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Logout successful\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Profile",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Profile data returned\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('user');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User Profile",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Profile updated successfully\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe Updated\",\n    \"phone\": \"+1234567891\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Reset email sent\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"john.doe@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/forgot-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"forgot-password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Password reset successful\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"reset-token-here\",\n    \"newPassword\": \"NewSecurePass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/reset-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"reset-password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Password changed successfully\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"currentPassword\": \"SecurePass123!\",\n    \"newPassword\": \"NewSecurePass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/change-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"change-password"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints for user registration, login, profile management, and password operations"
+		},
+		{
+			"name": "🎨 Banner Management",
+			"item": [
+				{
+					"name": "Create Banner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Banner created successfully\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('banner');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Summer Sale 2024",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Get up to 50% off on selected cars this summer season",
+									"type": "text"
+								},
+								{
+									"key": "altText",
+									"value": "Summer Sale Banner",
+									"type": "text"
+								},
+								{
+									"key": "isActive",
+									"value": "true",
+									"type": "text"
+								},
+								{
+									"key": "displayOrder",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "image",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/banners",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"banners"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Banners",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Banners returned successfully\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData.data).to.have.property('banners');",
+									"    pm.expect(jsonData.data).to.have.property('pagination');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/banners/search?q=sale&page=1&limit=10&searchIn=title,description&sortBy=relevance&sortOrder=desc",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"banners",
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "sale"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "searchIn",
+									"value": "title,description"
+								},
+								{
+									"key": "sortBy",
+									"value": "relevance"
+								},
+								{
+									"key": "sortOrder",
+									"value": "desc"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Banners",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Search results returned\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData.data).to.have.property('banners');",
+									"    pm.expect(jsonData.data).to.have.property('pagination');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/banners?page=1&limit=10&isActive=true&sortBy=displayOrder&sortOrder=asc",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"banners"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "isActive",
+									"value": "true"
+								},
+								{
+									"key": "sortBy",
+									"value": "displayOrder"
+								},
+								{
+									"key": "sortOrder",
+									"value": "asc"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Banner by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Banner details returned\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('banner');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/banners/507f1f77bcf86cd799439011",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"banners",
+								"507f1f77bcf86cd799439011"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Banner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Banner updated successfully\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('banner');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Summer Sale 2024 - Updated",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Get up to 60% off on selected cars this summer season - Limited time offer!",
+									"type": "text"
+								},
+								{
+									"key": "isActive",
+									"value": "true",
+									"type": "text"
+								},
+								{
+									"key": "displayOrder",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "image",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/banners/507f1f77bcf86cd799439011",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"banners",
+								"507f1f77bcf86cd799439011"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Banner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Banner deleted successfully\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/banners/507f1f77bcf86cd799439011",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"banners",
+								"507f1f77bcf86cd799439011"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Banner management endpoints for creating, reading, updating, and deleting promotional banners"
+		},
+		{
+			"name": "🚗 Car Management",
+			"item": [
+				{
+					"name": "Create Car",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"});",
+									"",
+									"pm.test(\"Car data is returned\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('car');",
+									"    pm.expect(jsonData.data.car).to.have.property('title');",
+									"    pm.expect(jsonData.data.car).to.have.property('brand');",
+									"    pm.expect(jsonData.data.car).to.have.property('carModel');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "2022 Toyota Camry Hybrid",
+									"type": "text"
+								},
+								{
+									"key": "brand",
+									"value": "Toyota",
+									"type": "text"
+								},
+								{
+									"key": "carModel",
+									"value": "Camry",
+									"type": "text"
+								},
+								{
+									"key": "year",
+									"value": "2022",
+									"type": "text"
+								},
+								{
+									"key": "variant",
+									"value": "2.5 Hybrid",
+									"type": "text"
+								},
+								{
+									"key": "bodyType",
+									"value": "Sedan",
+									"type": "text"
+								},
+								{
+									"key": "color",
+									"value": "Pearl White",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Excellent condition Toyota Camry Hybrid with full service history. Premium features include leather seats, sunroof, and advanced safety features.",
+									"type": "text"
+								},
+								{
+									"key": "regularPrice",
+									"value": "2500000",
+									"type": "text"
+								},
+								{
+									"key": "salePrice",
+									"value": "2400000",
+									"type": "text"
+								},
+								{
+									"key": "onRoadPrice",
+									"value": "2800000",
+									"type": "text"
+								},
+								{
+									"key": "emiStartingFrom",
+									"value": "45000",
+									"type": "text"
+								},
+								{
+									"key": "km",
+									"value": "15000",
+									"type": "text"
+								},
+								{
+									"key": "fuelType",
+									"value": "HYBRID",
+									"type": "text"
+								},
+								{
+									"key": "transmission",
+									"value": "AUTOMATIC",
+									"type": "text"
+								},
+								{
+									"key": "engine",
+									"value": "2.5L Hybrid",
+									"type": "text"
+								},
+								{
+									"key": "mileage",
+									"value": "19 km/l",
+									"type": "text"
+								},
+								{
+									"key": "seats",
+									"value": "5",
+									"type": "text"
+								},
+								{
+									"key": "ownership",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "driveType",
+									"value": "FWD",
+									"type": "text"
+								},
+								{
+									"key": "sellerType",
+									"value": "INDIVIDUAL",
+									"type": "text"
+								},
+								{
+									"key": "registrationCity",
+									"value": "Mumbai",
+									"type": "text"
+								},
+								{
+									"key": "registrationState",
+									"value": "Maharashtra",
+									"type": "text"
+								},
+								{
+									"key": "insurance",
+									"value": "COMPREHENSIVE",
+									"type": "text"
+								},
+								{
+									"key": "status",
+									"value": "available",
+									"type": "text"
+								},
+								{
+									"key": "isFeatured",
+									"value": "true",
+									"type": "text"
+								},
+								{
+									"key": "features",
+									"value": "{\"Sunroof\": true, \"Leather Seats\": true, \"Heated Seats\": true, \"Premium Sound System\": true, \"Navigation System\": true, \"Apple CarPlay\": true, \"Android Auto\": true, \"Wireless Charging\": true, \"Keyless Entry\": true, \"Push Button Start\": true, \"Dual Zone Climate Control\": true, \"Rear AC Vents\": true, \"Cruise Control\": true, \"360° Camera\": true, \"Parking Sensors\": true, \"Blind Spot Monitoring\": true, \"Lane Keep Assist\": true, \"Heads-Up Display\": true, \"Ambient Lighting\": true, \"Power Tailgate\": true, \"Heated Steering Wheel\": true, \"Auto Dimming Mirrors\": true, \"Rain Sensing Wipers\": true, \"Automatic Headlights\": true, \"LED Headlights\": true, \"Fog Lights\": true, \"Alloy Wheels\": true, \"Spare Wheel\": true}",
+									"type": "text"
+								},
+								{
+									"key": "specifications",
+									"value": "{\"Turbo Engine\": false, \"Automatic Transmission\": true, \"All-Wheel Drive\": false, \"Leather Seats\": true, \"Sunroof\": true, \"Heated Seats\": true, \"Memory Seats\": false, \"Premium Sound System\": true, \"Navigation System\": true, \"Apple CarPlay\": true, \"Android Auto\": true, \"Wireless Charging\": true, \"Keyless Entry\": true, \"Push Button Start\": true, \"Remote Start\": false, \"Dual Zone Climate Control\": true, \"Rear AC Vents\": true, \"Cruise Control\": true, \"Adaptive Cruise Control\": false, \"360° Camera\": true, \"Parking Sensors\": true, \"Blind Spot Monitoring\": true, \"Lane Departure Warning\": true, \"Heads-Up Display\": true, \"Ambient Lighting\": true, \"Power Tailgate\": true}",
+									"type": "text"
+								},
+								{
+									"key": "primaryImage",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/cars",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cars"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Cars (Advanced Filtering)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has cars array\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData.data).to.have.property('cars');",
+									"    pm.expect(jsonData.data).to.have.property('pagination');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cars?page=1&limit=12&brand=Toyota&fuelType=HYBRID&minPrice=2000000&maxPrice=3000000&sortBy=price&sortOrder=asc",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cars"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "12"
+								},
+								{
+									"key": "brand",
+									"value": "Toyota"
+								},
+								{
+									"key": "fuelType",
+									"value": "HYBRID"
+								},
+								{
+									"key": "minPrice",
+									"value": "2000000"
+								},
+								{
+									"key": "maxPrice",
+									"value": "3000000"
+								},
+								{
+									"key": "sortBy",
+									"value": "price"
+								},
+								{
+									"key": "sortOrder",
+									"value": "asc"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Advanced Search Cars",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Search results returned\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData.data).to.have.property('cars');",
+									"    pm.expect(jsonData.data).to.have.property('pagination');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cars/search?q=Toyota&fuelType=HYBRID&minPrice=2000000&maxPrice=3000000&transmission=AUTOMATIC&bodyType=Sedan&seats=5&page=1&limit=10&sortBy=relevance&sortOrder=desc",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cars",
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "Toyota"
+								},
+								{
+									"key": "fuelType",
+									"value": "HYBRID"
+								},
+								{
+									"key": "minPrice",
+									"value": "2000000"
+								},
+								{
+									"key": "maxPrice",
+									"value": "3000000"
+								},
+								{
+									"key": "transmission",
+									"value": "AUTOMATIC"
+								},
+								{
+									"key": "bodyType",
+									"value": "Sedan"
+								},
+								{
+									"key": "seats",
+									"value": "5"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "sortBy",
+									"value": "relevance"
+								},
+								{
+									"key": "sortOrder",
+									"value": "desc"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Featured Cars",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Featured cars returned\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('cars');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cars/featured?limit=6",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cars",
+								"featured"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "6"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cars by Seller",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Seller cars returned\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData.data).to.have.property('cars');",
+									"    pm.expect(jsonData.data).to.have.property('pagination');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cars/seller/64f8a1b2c3d4e5f6a7b8c9d0?page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cars",
+								"seller",
+								"64f8a1b2c3d4e5f6a7b8c9d0"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Car by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Car details returned\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('car');",
+									"    pm.expect(jsonData.data.car).to.have.property('title');",
+									"    pm.expect(jsonData.data.car).to.have.property('brand');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cars/64f8a1b2c3d4e5f6a7b8c9d0",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cars",
+								"64f8a1b2c3d4e5f6a7b8c9d0"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Car by Slug",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Car details returned by slug\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('car');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cars/slug/2022-toyota-camry-hybrid",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cars",
+								"slug",
+								"2022-toyota-camry-hybrid"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Car Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Car updated successfully\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('car');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"2022 Toyota Camry Hybrid - Updated\",\n    \"price\": \"2600000\",\n    \"description\": \"Excellent condition Toyota Camry Hybrid with full service history. Recently serviced and detailed.\",\n    \"isFeatured\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/cars/64f8a1b2c3d4e5f6a7b8c9d0",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cars",
+								"64f8a1b2c3d4e5f6a7b8c9d0"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Car",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Car deleted successfully\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/cars/64f8a1b2c3d4e5f6a7b8c9d0",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cars",
+								"64f8a1b2c3d4e5f6a7b8c9d0"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Complete car management endpoints including CRUD operations, advanced search, filtering by price range, brand, body type, transmission, fuel type, and seating capacity"
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
