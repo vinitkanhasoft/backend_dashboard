@@ -101,7 +101,6 @@ const CarPlateSchema = new Schema<ICarPlate>({
 });
 
 // Indexes
-CarPlateSchema.index({ plateNumber: 1 }, { unique: true });
 CarPlateSchema.index({ state: 1 });
 CarPlateSchema.index({ district: 1 });
 CarPlateSchema.index({ rtoCode: 1 });

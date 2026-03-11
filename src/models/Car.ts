@@ -252,7 +252,6 @@ const CarSchema = new Schema<ICar>({
 // Indexes for better performance
 CarSchema.index({ brand: 1, carModel: 1 });
 CarSchema.index({ status: 1, isFeatured: 1 });
-CarSchema.index({ slug: 1 });
 CarSchema.index({ fuelType: 1, transmission: 1, bodyType: 1 });
 CarSchema.index({ regularPrice: 1, salePrice: 1 });
 CarSchema.index({ year: 1, km: 1 });

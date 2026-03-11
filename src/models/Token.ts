@@ -10,13 +10,11 @@ const tokenSchema = new Schema<TokenDocument>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'User ID is required'],
-      index: true,
     },
     token: {
       type: String,
       required: [true, 'Token is required'],
       unique: true,
-      index: true,
     },
     type: {
       type: String,
@@ -26,12 +24,10 @@ const tokenSchema = new Schema<TokenDocument>(
     expiresAt: {
       type: Date,
       required: [true, 'Expiration date is required'],
-      index: true,
     },
     isRevoked: {
       type: Boolean,
       default: false,
-      index: true,
     },
   },
   {

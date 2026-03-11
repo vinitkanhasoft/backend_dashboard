@@ -1,9 +1,9 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
 import { database } from './config/database';
 import { redis } from './config/redis';
 import { logger } from './utils/logger';
@@ -12,9 +12,6 @@ import routes from './routes';
 import { apiRateLimit } from './middleware/rateLimiter';
 import { getSystemInfo, getContactInfo } from './constants/systemInfo';
 import { createErrorResponse, API_RESPONSES } from './constants/apiResponses';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -222,7 +219,25 @@ const startServer = async () => {
 
     return server;
   } catch (error) {
-    logger.error('Failed to start server:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    logger.error('Failed to start server:', {
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    // Provide more specific error messages
+    if (errorMessage.includes('MongoDB')) {
+      logger.error('💡 MongoDB connection issue. Please check:');
+      logger.error('   1. MongoDB is running locally (mongod)');  
+      logger.error('   2. MONGODB_URI is correct in .env file');
+      logger.error('   3. Network connectivity to MongoDB server');
+      logger.error('   4. Authentication credentials are correct');
+    } else if (errorMessage.includes('EADDRINUSE')) {
+      logger.error(`💡 Port ${PORT} is already in use. Please:`);
+      logger.error('   1. Kill the process using this port');
+      logger.error('   2. Change the PORT in .env file');
+    }
+    
     process.exit(1);
   }
 };

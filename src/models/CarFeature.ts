@@ -14,7 +14,6 @@ const CarFeatureSchema = new Schema<ICarFeature>({
     type: Schema.Types.ObjectId,
     ref: 'Car',
     required: [true, 'Car ID is required'],
-    index: true
   },
   features: {
     type: Schema.Types.Mixed, // Store as object
@@ -38,7 +37,6 @@ const CarFeatureSchema = new Schema<ICarFeature>({
 });
 
 // Compound index for efficient queries
-CarFeatureSchema.index({ carId: 1 });
 CarFeatureSchema.index({ category: 1 });
 
 export const CarFeature = mongoose.model<ICarFeature>('CarFeature', CarFeatureSchema);

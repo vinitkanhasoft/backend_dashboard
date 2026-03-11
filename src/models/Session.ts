@@ -35,7 +35,6 @@ const sessionSchema = new Schema<ISessionDocument>(
       ref: 'User',
       required: true,
       unique: true,
-      index: true,
     },
     sessions: [
       {

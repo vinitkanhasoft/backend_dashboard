@@ -7,7 +7,7 @@ export interface DatabaseConfig {
   username?: string;
   password?: string;
   host: string;
-  port: number;
+  port?: number;
   database: string;
   options?: string;
 }
@@ -16,12 +16,13 @@ export interface DatabaseConfig {
 const parseMongoUri = (uri: string): DatabaseConfig => {
   try {
     const url = new URL(uri);
+    const protocol = url.protocol.replace(':', '');
     return {
-      protocol: url.protocol.replace(':', ''),
+      protocol,
       username: url.username || undefined,
       password: url.password || undefined,
       host: url.hostname,
-      port: parseInt(url.port) || 27017,
+      port: protocol === 'mongodb+srv' ? undefined : parseInt(url.port) || 27017,
       database: url.pathname.substring(1),
       options: url.search || undefined,
     };
@@ -48,7 +49,11 @@ const buildMongoUri = (config: DatabaseConfig): string => {
     uri += `${encodeURIComponent(username)}@`;
   }
 
-  uri += `${host}:${port}/${database}`;
+  if (protocol === 'mongodb+srv') {
+    uri += `${host}/${database}`;
+  } else {
+    uri += `${host}${port ? ':' + port : ''}/${database}`;
+  }
 
   if (options) {
     uri += options;
@@ -64,13 +69,15 @@ const getDatabaseConfig = (): DatabaseConfig => {
     return parseMongoUri(process.env.MONGODB_URI);
   }
 
+  const protocol = process.env.MONGODB_PROTOCOL || 'mongodb';
+
   // Otherwise, build from individual environment variables
   return {
-    protocol: process.env.MONGODB_PROTOCOL || 'mongodb',
+    protocol,
     username: process.env.MONGODB_USERNAME,
     password: process.env.MONGODB_PASSWORD,
     host: process.env.MONGODB_HOST || 'localhost',
-    port: parseInt(process.env.MONGODB_PORT || '27017'),
+    port: protocol === 'mongodb+srv' ? undefined : parseInt(process.env.MONGODB_PORT || '27017'),
     database: process.env.MONGODB_DATABASE || 'auth-system',
     options: process.env.MONGODB_OPTIONS,
   };
@@ -133,9 +140,16 @@ export class DatabaseConnection {
         this.isConnected = true;
       });
     } catch (error) {
-      logger.error('Failed to connect to MongoDB:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      logger.error('Failed to connect to MongoDB:', {
+        error: errorMessage,
+        host: this.config.host,
+        port: this.config.port,
+        database: this.config.database,
+        hasAuth: !!(this.config.username && this.config.password)
+      });
       this.isConnected = false;
-      throw error;
+      throw new Error(`MongoDB connection failed: ${errorMessage}`);
     }
   }
 
